@@ -1,0 +1,11 @@
+{
+  "id": "EX-1",
+  "subject": "Charged twice yesterday",
+  "body": "Hi, my card was charged twice for the Pro plan yesterday (29 USD each). Could you refund the duplicate?",
+  "customer": {
+    "customer_id": "C-1001",
+    "plan": "pro",
+    "last_charge_days_ago": 1,
+    "last_charge_amount": 29.0
+  }
+}

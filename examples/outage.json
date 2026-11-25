@@ -1,0 +1,9 @@
+{
+  "id": "EX-3",
+  "subject": "Everything is down",
+  "body": "All our requests return 502 in every region since 9am. Is there an outage?",
+  "customer": {
+    "customer_id": "C-1003",
+    "plan": "team"
+  }
+}
