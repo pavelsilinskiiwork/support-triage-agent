@@ -110,3 +110,29 @@ def test_main_cli_runs_a_ticket_and_prints_the_graph(capsys):
     assert out["disposition"] == "escalate" and "issue_refund" not in [e["name"] for e in out["executed"]]
     assert main(["graph"]) == 0
     assert "classify" in capsys.readouterr().out
+
+
+class DownLLM:
+    name = "down"
+    model = "down-1"
+
+    def complete(self, system, user, max_tokens=800):
+        from triage.llm import LLMError
+
+        raise LLMError("down: AuthenticationError (HTTP 401)")
+
+
+def test_a_run_where_every_call_fails_writes_nothing(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(evaluate, "get_llm", lambda provider, model: DownLLM())
+    md = tmp_path / "r.md"
+    code = evaluate.main(["--provider", "x", "--workers", "1", "--limit", "3", "--md", str(md)])
+    assert code == 2 and not md.exists()
+    err = capsys.readouterr().err
+    assert "failed" in err and "AuthenticationError (HTTP 401)" in err
+
+
+def test_partial_failures_are_flagged_in_the_report(standin_summaries):
+    broken = {**standin_summaries["multi"], "errors": 5, "error_counts": {"x": 5}}
+    text = evaluate.render_markdown({"provider": "anthropic", "model": "m", "tickets": 46, "repeat": 1, "date": "d"},
+                                    {"multi": broken}, (29, 29))
+    assert "results are unreliable" in text

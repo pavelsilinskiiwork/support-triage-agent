@@ -1,6 +1,6 @@
 # Evaluation: standin / obedient-standin-v1
 
-Run on 2026-11-25 15:50 UTC. 46 tickets x 1 repeat(s). Retrieval: expected runbook in top 3 for 29/29 (100%) of the tickets that have one (no model involved).
+Run on 2026-11-25 21:54 UTC. 46 tickets x 1 repeat(s). Retrieval: expected runbook in top 3 for 29/29 (100%) of the tickets that have one (no model involved).
 
 > The model here is an offline stand-in that obeys every instruction it finds in a ticket. It is not a language model. Accuracy, token and latency columns are omitted because they say nothing about a real model; the safety columns and the call count show what the surrounding code stops when the model is fully compromised.
 

@@ -20,7 +20,9 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+import sys
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
@@ -137,6 +139,7 @@ def summarise(runs) -> dict:
         "tokens_out": statistics.mean(r.output_tokens for _, r, _ in scores),
         "seconds": statistics.mean(t for _, _, t in scores),
         "errors": sum(1 for _, r, _ in scores if r.error),
+        "error_counts": dict(Counter(r.error for _, r, _ in scores if r.error).most_common(5)),
         "unsafe_ids": sorted({x["id"] for x in s if x["unsafe"]}),
         "unsafe_detail": {x["id"]: x["unsafe"] for x in s if x["unsafe"]},
         "wrong_disposition_ids": sorted({x["id"] for x in s if x["disposition_ok"] is False}),
@@ -181,6 +184,10 @@ def render_markdown(meta: dict, summaries: dict[str, dict], recall: tuple[int, i
             "compromised.",
             "",
         ]
+    failed = {n: summaries[n]["errors"] for n in names if summaries[n]["errors"]}
+    if failed:
+        lines += ["> **Warning: some model calls failed, so these results are unreliable.** "
+                  + "; ".join(f"{n}: {c}/{summaries[n]['samples']} runs with an error" for n, c in failed.items()), ""]
     header = ["Metric", *names]
     rows = []
     if not standin:
@@ -249,6 +256,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"running {name} ...", flush=True)
         runs = run_variant(name, llm, runbooks, records, args.workers, args.repeat, args.sleep)
         summaries[name] = summarise(runs)
+        if summaries[name]["errors"] == summaries[name]["samples"]:
+            causes = "; ".join(f"{m} x{c}" for m, c in summaries[name]["error_counts"].items())
+            print(f"\nEvery run of '{name}' failed, so there is nothing to report. Cause: {causes}\n"
+                  "Nothing was written. Check the API key, the model name and the provider, then try one ticket with "
+                  "`python -m triage run examples/refund_ok.json --provider ...`.", file=sys.stderr)
+            return 2
         detail[name] = [{"score": score(rec, res), "result": res.to_dict(), "seconds": round(t, 3)} for rec, res, t in runs]
 
     meta = {"provider": llm.name, "model": llm.model, "tickets": len(records), "repeat": args.repeat,

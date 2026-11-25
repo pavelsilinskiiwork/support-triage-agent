@@ -67,7 +67,8 @@ class AnthropicLLM:
             )
         except Exception as e:  # SDK errors differ by version; keep only the class name
             status = getattr(e, "status_code", None)
-            raise LLMError(f"anthropic: {e.__class__.__name__}", rate_limited=status == 429) from e
+            where = f" (HTTP {status})" if status else ""
+            raise LLMError(f"anthropic: {e.__class__.__name__}{where}", rate_limited=status == 429) from e
         text = "".join(b.text for b in response.content if getattr(b, "type", "") == "text")
         usage = getattr(response, "usage", None)
         return Reply(
